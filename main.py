@@ -1,3 +1,5 @@
+import random
+
 import pygame
 
 pygame.init()
@@ -14,6 +16,8 @@ GROUND_Y = HEIGHT - 20
 GRAVITY = 1
 JUMP_SPEED = -15
 OBSTACLE_SPEED = 5
+SPAWN_DELAY = 1000
+MAX_OFFSET_SPAWN_DELAY = 500
 
 
 window = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -47,12 +51,12 @@ class Player(pygame.sprite.Sprite):
 
 
 class Obstacle(pygame.sprite.Sprite):
-    def __init__(self, x, width, height):
+    def __init__(self, x, y, width, height):
         super().__init__()
         self.image = pygame.Surface((width, height))
         self.image.fill(PURPLE)
         self.rect = self.image.get_rect()
-        self.rect.bottomleft = (x, GROUND_Y)
+        self.rect.bottomleft = (x, y)
 
     def update(self, keys):
         self.rect.x -= OBSTACLE_SPEED
@@ -68,17 +72,28 @@ obstacles = pygame.sprite.Group()
 player = Player(100, HEIGHT - 40, 25)
 all_sprites.add(player)
 
-obstacle = Obstacle(WIDTH - 40, 25, 25)
-obstacles.add(obstacle)
-all_sprites.add(obstacle)
+# obstacle = Obstacle(WIDTH - 40, 25, 25)
+# obstacles.add(obstacle)
+# all_sprites.add(obstacle)
+
+last_spawn_time = pygame.time.get_ticks()
 
 while running:
     clock.tick(FPS)
     keys = pygame.key.get_pressed()
+    current_time = pygame.time.get_ticks()
+    random_spawn_delay = random.randint(0, MAX_OFFSET_SPAWN_DELAY)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+
+    if current_time - last_spawn_time > SPAWN_DELAY + random_spawn_delay:
+        last_spawn_time = current_time
+        y_pos = GROUND_Y - random.randint(0, 100)
+        obstacle = Obstacle(WIDTH, y_pos,25, 25)
+        all_sprites.add(obstacle)
+        obstacles.add(obstacle)
 
     window.fill(BLACK)
     all_sprites.draw(window)
