@@ -8,7 +8,7 @@ with open('data/map.csv', 'r') as file:
     for line in file_content:
         map_content.append(line.split(','))
 
-BLOCK_SIZE = 30
+BLOCK_SIZE = 32
 SCREEN_HEIGHT = len(map_content) * BLOCK_SIZE
 SCREEN_WIDTH = 2 * SCREEN_HEIGHT
 
@@ -116,7 +116,7 @@ def draw_debug_grid(window):
 running = True
 
 all_sprites = pygame.sprite.Group()
-player = Player(3 * BLOCK_SIZE, 0, BLOCK_SIZE)
+player = Player(3 * BLOCK_SIZE, SCREEN_HEIGHT - 5*BLOCK_SIZE, BLOCK_SIZE)
 obstacles = pygame.sprite.Group()
 floor_group = pygame.sprite.Group()
 coin_group = pygame.sprite.Group()
