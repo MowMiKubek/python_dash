@@ -8,6 +8,16 @@ with open('data/map.csv', 'r') as file:
     for line in file_content:
         map_content.append(line.split(','))
 
+player_image = pygame.image.load('data/images/avatar.png')
+player_image = pygame.transform.scale(player_image, (32, 32))
+
+floor_image = pygame.image.load('data/images/block_1.png')
+floor_image = pygame.transform.scale(floor_image, (32, 32))
+
+spike_image = pygame.image.load('data/images/obj-spike.png')
+spike_image = pygame.transform.scale(spike_image, (32, 32))
+
+BLOCK_SIZE = 32
 BLOCK_SIZE = 32
 SCREEN_HEIGHT = len(map_content) * BLOCK_SIZE
 SCREEN_WIDTH = 2 * SCREEN_HEIGHT
@@ -39,8 +49,7 @@ clock = pygame.time.Clock()
 class Player(pygame.sprite.Sprite):
     def __init__(self, x, y, size):
         super().__init__()
-        self.image = pygame.Surface((size, size))
-        self.image.fill(GREEN)
+        self.image = player_image
         self.rect = self.image.get_rect()
         self.rect.topleft = (x, y)
 
@@ -67,8 +76,7 @@ class Player(pygame.sprite.Sprite):
 class Obstacle(pygame.sprite.Sprite):
     def __init__(self, x, y, width, height):
         super().__init__()
-        self.image = pygame.Surface((width, height))
-        self.image.fill(PURPLE)
+        self.image = spike_image
         self.rect = self.image.get_rect()
         self.rect.topleft = (x, y)
 
@@ -95,8 +103,7 @@ class Coin(pygame.sprite.Sprite):
 class Floor(pygame.sprite.Sprite):
     def __init__(self, x, y, width, height):
         super().__init__()
-        self.image = pygame.Surface((width, height))
-        self.image.fill(BLUE)
+        self.image = floor_image
         self.rect = self.image.get_rect()
         self.rect.topleft = (x, y)
 
