@@ -1,9 +1,10 @@
 import pygame
+import csv
 
 pygame.init()
 
 map_content = []
-with open('data/map.csv', 'r') as file:
+with open('data/map_objects.csv', 'r') as file:
     file_content = file.readlines()
     for line in file_content:
         map_content.append(line.split(','))
@@ -18,12 +19,36 @@ spike_image = pygame.image.load('data/images/obj-spike.png')
 spike_image = pygame.transform.scale(spike_image, (32, 32))
 
 BLOCK_SIZE = 32
-BLOCK_SIZE = 32
+
 SCREEN_HEIGHT = len(map_content) * BLOCK_SIZE
 SCREEN_WIDTH = 2 * SCREEN_HEIGHT
 
 HEIGHT = len(map_content)
 WIDTH = 2 * HEIGHT
+
+tileset_image = pygame.image.load('data/images/bg.png')
+tiles = []
+
+tileset_rows = tileset_image.get_height() // BLOCK_SIZE
+tileset_cols = tileset_image.get_width() // BLOCK_SIZE
+
+for row in range(tileset_rows):
+    for col in range(tileset_cols):
+        tile = tileset_image.subsurface((col * BLOCK_SIZE, row * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE))
+        tiles.append(tile)
+
+with open("data/map_background.csv", "r") as file:
+    reader = csv.reader(file)
+    tilemap = [list(map(int, row)) for row in reader]
+
+MAP_ROWS = len(tilemap)
+MAP_COLS = len(tilemap[0])
+
+background_surface = pygame.Surface((MAP_COLS * BLOCK_SIZE, MAP_ROWS * BLOCK_SIZE), pygame.SRCALPHA)
+for row_idx, row in enumerate(tilemap):
+    for col_idx, tile_idx in enumerate(row):
+        tile_image = tiles[tile_idx]
+        background_surface.blit(tile_image, (col_idx * BLOCK_SIZE, row_idx * BLOCK_SIZE))
 
 FPS = 60
 
@@ -145,6 +170,7 @@ for i, row in enumerate(map_content):
             coin_group.add(coin)
             all_sprites.add(coin)
 
+background_offset = 0
 while running:
     clock.tick(FPS)
     keys = pygame.key.get_pressed()
@@ -153,7 +179,8 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    window.fill(BLACK)
+    # window.fill(BLACK)
+    window.blit(background_surface, (-background_offset, 0))
     all_sprites.draw(window)
 
     if pygame.sprite.spritecollideany(player, obstacles):
@@ -162,5 +189,6 @@ while running:
 
     all_sprites.update(keys)
     pygame.display.update()
+    background_offset += OBSTACLE_SPEED
 
 pygame.quit()
