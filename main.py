@@ -3,6 +3,8 @@ import csv
 
 pygame.init()
 
+
+
 map_content = []
 with open('data/map_objects.csv', 'r') as file:
     file_content = file.readlines()
@@ -69,6 +71,11 @@ MAX_OFFSET_SPAWN_DELAY = 500
 window = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Python Dash")
 clock = pygame.time.Clock()
+
+pygame.mixer.init()
+pygame.mixer.music.load("data/music/music1.mp3")
+pygame.mixer.music.play(-1)
+pygame.mixer.music.set_volume(0.1)
 
 
 class Player(pygame.sprite.Sprite):
@@ -146,6 +153,15 @@ def draw_debug_grid(window):
             pygame.draw.rect(window, WHITE, rect, 1)
 
 
+def show_game_over(window):
+    pygame.mixer.music.fadeout(1000)
+    font = pygame.font.SysFont(None, 72)
+    text = font.render("Game over", True, WHITE)
+    window.blit(text, (SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT // 2 - 40))
+    pygame.display.update()
+    pygame.time.delay(3000)
+
+
 running = True
 
 all_sprites = pygame.sprite.Group()
@@ -199,4 +215,5 @@ while running:
     pygame.display.update()
     background_offset += OBSTACLE_SPEED
 
+show_game_over(window)
 pygame.quit()
