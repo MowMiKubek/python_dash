@@ -86,16 +86,17 @@ class Player(pygame.sprite.Sprite):
             self.velocity = JUMP_SPEED
             self.on_ground = False
 
-        # if self.rect.bottom >= GROUND_Y:
+        self.rect.y += self.velocity
+        self.velocity += GRAVITY
+
         floor_collided_block = pygame.sprite.spritecollideany(self, floor_group)
         if floor_collided_block is not None:
-            self.velocity = 0
-            self.on_ground = True
-            self.rect.top = floor_collided_block.rect.top - BLOCK_SIZE
-        # if not pygame.sprite.spritecollideany(self, floor_group):
+            if self.velocity > 0:
+                self.velocity = 0
+                self.on_ground = True
+                self.rect.bottom = floor_collided_block.rect.top
         else:
-            self.rect.y += self.velocity
-            self.velocity += GRAVITY
+            self.on_ground = False
 
 
 class Obstacle(pygame.sprite.Sprite):
@@ -185,7 +186,14 @@ while running:
 
     if pygame.sprite.spritecollideany(player, obstacles):
         running = False
-        pass
+
+    floor_hits = pygame.sprite.spritecollide(player, floor_group, False)
+    for block in floor_hits:
+        # collision from left
+        if player.rect.right >= block.rect.left:
+            running = False
+        elif player.rect.top <= block.rect.bottom:
+            running = False
 
     all_sprites.update(keys)
     pygame.display.update()
