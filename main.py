@@ -3,8 +3,6 @@ import csv
 
 pygame.init()
 
-
-
 map_content = []
 with open('data/map_objects.csv', 'r') as file:
     file_content = file.readlines()
@@ -20,17 +18,30 @@ floor_image = pygame.transform.scale(floor_image, (32, 32))
 spike_image = pygame.image.load('data/images/obj-spike.png')
 spike_image = pygame.transform.scale(spike_image, (32, 32))
 
-BLOCK_SIZE = 32
+tileset_image = pygame.image.load('data/images/bg.png')
 
+FPS = 60
+BLOCK_SIZE = 32
 SCREEN_HEIGHT = len(map_content) * BLOCK_SIZE
 SCREEN_WIDTH = 2 * SCREEN_HEIGHT
-
 HEIGHT = len(map_content)
 WIDTH = 2 * HEIGHT
 
-tileset_image = pygame.image.load('data/images/bg.png')
-tiles = []
+GROUND_Y = SCREEN_HEIGHT - 20
+GRAVITY = 1
+JUMP_SPEED = -15
+OBSTACLE_SPEED = 5
+SPAWN_DELAY = 1000
+MAX_OFFSET_SPAWN_DELAY = 500
 
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+BLUE = (0, 0, 255)
+PURPLE = (128, 0, 128)
+GOLD = (255, 215, 0)
+GREEN = (0, 128, 0)
+
+tiles = []
 tileset_rows = tileset_image.get_height() // BLOCK_SIZE
 tileset_cols = tileset_image.get_width() // BLOCK_SIZE
 
@@ -51,22 +62,6 @@ for row_idx, row in enumerate(tilemap):
     for col_idx, tile_idx in enumerate(row):
         tile_image = tiles[tile_idx]
         background_surface.blit(tile_image, (col_idx * BLOCK_SIZE, row_idx * BLOCK_SIZE))
-
-FPS = 60
-
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-BLUE = (0, 0, 255)
-PURPLE = (128, 0, 128)
-GOLD = (255, 215, 0)
-GREEN = (0, 128, 0)
-
-GROUND_Y = SCREEN_HEIGHT - 20
-GRAVITY = 1
-JUMP_SPEED = -15
-OBSTACLE_SPEED = 5
-SPAWN_DELAY = 1000
-MAX_OFFSET_SPAWN_DELAY = 500
 
 window = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Python Dash")
@@ -89,9 +84,8 @@ class Player(pygame.sprite.Sprite):
         self.on_ground = True
 
     def update(self, keys):
-        if keys[pygame.K_SPACE] and self.on_ground:
-            self.velocity = JUMP_SPEED
-            self.on_ground = False
+        if keys[pygame.K_SPACE]:
+            self.jump()
 
         self.rect.y += self.velocity
         self.velocity += GRAVITY
@@ -103,6 +97,11 @@ class Player(pygame.sprite.Sprite):
                 self.on_ground = True
                 self.rect.bottom = floor_collided_block.rect.top
         else:
+            self.on_ground = False
+
+    def jump(self):
+        if self.on_ground:
+            self.velocity = JUMP_SPEED
             self.on_ground = False
 
 
@@ -119,7 +118,7 @@ class Obstacle(pygame.sprite.Sprite):
             self.kill()
 
 
-class Coin(pygame.sprite.Sprite):
+class Orb(pygame.sprite.Sprite):
     def __init__(self, x, y, width, height):
         super().__init__()
         self.image = pygame.Surface((width, height))
@@ -168,7 +167,7 @@ all_sprites = pygame.sprite.Group()
 player = Player(3 * BLOCK_SIZE, SCREEN_HEIGHT - 5*BLOCK_SIZE, BLOCK_SIZE)
 obstacles = pygame.sprite.Group()
 floor_group = pygame.sprite.Group()
-coin_group = pygame.sprite.Group()
+orb_group = pygame.sprite.Group()
 
 all_sprites.add(player)
 
@@ -183,9 +182,9 @@ for i, row in enumerate(map_content):
             floor_group.add(floor)
             all_sprites.add(floor)
         if cell == 'Orb':
-            coin = Coin(j * BLOCK_SIZE, i * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE)
-            coin_group.add(coin)
-            all_sprites.add(coin)
+            orb = Orb(j * BLOCK_SIZE, i * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE)
+            orb_group.add(orb)
+            all_sprites.add(orb)
 
 background_offset = 0
 while running:
@@ -196,7 +195,7 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    # window.fill(BLACK)
+    window.fill(BLACK)
     window.blit(background_surface, (-background_offset, 0))
     all_sprites.draw(window)
 
