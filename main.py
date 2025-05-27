@@ -21,6 +21,9 @@ spike_image = pygame.transform.scale(spike_image, (32, 32))
 orb_image = pygame.image.load('data/images/orb-yellow.png')
 orb_image = pygame.transform.scale(orb_image, (32, 32))
 
+coin_image = pygame.image.load('data/images/coin.png')
+coin_image = pygame.transform.scale(coin_image, (32, 32))
+
 tileset_image = pygame.image.load('data/images/bg.png')
 
 FPS = 60
@@ -134,6 +137,17 @@ class Orb(pygame.sprite.Sprite):
         if self.rect.right < 0:
             self.kill()
 
+class Coin(pygame.sprite.Sprite):
+    def __init__(self, x, y, width, height):
+        super().__init__()
+        self.image = coin_image
+        self.rect = self.image.get_rect()
+        self.rect.topleft = (x, y)
+
+    def update(self, keys):
+        self.rect.x -= OBSTACLE_SPEED
+        if self.rect.right < 0:
+            self.kill()
 
 class Floor(pygame.sprite.Sprite):
     def __init__(self, x, y, width, height):
@@ -164,13 +178,24 @@ def show_game_over(window):
     pygame.time.delay(3000)
 
 
+def show_score(window, score):
+    font = pygame.font.SysFont("Comic Sans MS", 48)
+    text = font.render(f'Score: {score}', True, WHITE)
+    window.blit(text, (0, 0))
+
+def show_coin_count(window, score):
+    for i in range(score):
+        window.blit(coin_image, (300 + 40 * i, 16))
+
+
 running = True
 
 all_sprites = pygame.sprite.Group()
-player = Player(3 * BLOCK_SIZE, SCREEN_HEIGHT - 5*BLOCK_SIZE, BLOCK_SIZE)
+player = Player(3 * BLOCK_SIZE, SCREEN_HEIGHT - 5 * BLOCK_SIZE, BLOCK_SIZE)
 obstacles = pygame.sprite.Group()
 floor_group = pygame.sprite.Group()
 orb_group = pygame.sprite.Group()
+coin_group = pygame.sprite.Group()
 
 all_sprites.add(player)
 
@@ -188,6 +213,14 @@ for i, row in enumerate(map_content):
             orb = Orb(j * BLOCK_SIZE, i * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE)
             orb_group.add(orb)
             all_sprites.add(orb)
+        if cell == 'Coin':
+            coin = Coin(j * BLOCK_SIZE, i * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE)
+            coin_group.add(coin)
+            all_sprites.add(coin)
+
+score = 0
+coin_counter = 0
+last_score_timestamp = pygame.time.get_ticks()
 
 background_offset = 0
 while running:
@@ -198,6 +231,10 @@ while running:
         if event.type == pygame.QUIT:
             running = False
             pygame.quit()
+
+    if pygame.time.get_ticks() - last_score_timestamp > 1000:
+        last_score_timestamp = pygame.time.get_ticks()
+        score += 1
 
     window.fill(BLACK)
     window.blit(background_surface, (-background_offset, 0))
@@ -219,6 +256,12 @@ while running:
         player.extra_jump = True
     else:
         player.extra_jump = False
+
+    if pygame.sprite.spritecollide(player, coin_group, True):
+        coin_counter += 1
+
+    show_score(window, score)
+    show_coin_count(window, coin_counter)
 
     all_sprites.update(keys)
     pygame.display.update()
