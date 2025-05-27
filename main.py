@@ -18,6 +18,9 @@ floor_image = pygame.transform.scale(floor_image, (32, 32))
 spike_image = pygame.image.load('data/images/obj-spike.png')
 spike_image = pygame.transform.scale(spike_image, (32, 32))
 
+orb_image = pygame.image.load('data/images/orb-yellow.png')
+orb_image = pygame.transform.scale(orb_image, (32, 32))
+
 tileset_image = pygame.image.load('data/images/bg.png')
 
 FPS = 60
@@ -82,6 +85,7 @@ class Player(pygame.sprite.Sprite):
 
         self.velocity = 0
         self.on_ground = True
+        self.extra_jump = False
 
     def update(self, keys):
         if keys[pygame.K_SPACE]:
@@ -100,7 +104,7 @@ class Player(pygame.sprite.Sprite):
             self.on_ground = False
 
     def jump(self):
-        if self.on_ground:
+        if self.on_ground or self.extra_jump:
             self.velocity = JUMP_SPEED
             self.on_ground = False
 
@@ -121,8 +125,7 @@ class Obstacle(pygame.sprite.Sprite):
 class Orb(pygame.sprite.Sprite):
     def __init__(self, x, y, width, height):
         super().__init__()
-        self.image = pygame.Surface((width, height))
-        self.image.fill(GOLD)
+        self.image = orb_image
         self.rect = self.image.get_rect()
         self.rect.topleft = (x, y)
 
@@ -194,6 +197,7 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+            pygame.quit()
 
     window.fill(BLACK)
     window.blit(background_surface, (-background_offset, 0))
@@ -209,6 +213,12 @@ while running:
             running = False
         elif player.rect.top <= block.rect.bottom:
             running = False
+
+    collided_obr = pygame.sprite.spritecollideany(player, orb_group)
+    if collided_obr is not None:
+        player.extra_jump = True
+    else:
+        player.extra_jump = False
 
     all_sprites.update(keys)
     pygame.display.update()
