@@ -40,6 +40,11 @@ OBSTACLE_SPEED = 5
 SPAWN_DELAY = 1000
 MAX_OFFSET_SPAWN_DELAY = 500
 
+VOLUME_MESSAGE_DURATION = 1000
+MIN_VOLUME = 0
+MAX_VOLUME = 100
+VOLUME_TICK = 5
+
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 BLUE = (0, 0, 255)
@@ -73,10 +78,12 @@ window = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Python Dash")
 clock = pygame.time.Clock()
 
+volume = 0
+
 pygame.mixer.init()
 pygame.mixer.music.load("data/music/music1.mp3")
 pygame.mixer.music.play(-1)
-pygame.mixer.music.set_volume(0.1)
+pygame.mixer.music.set_volume(volume / 100)
 
 
 class Player(pygame.sprite.Sprite):
@@ -137,6 +144,7 @@ class Orb(pygame.sprite.Sprite):
         if self.rect.right < 0:
             self.kill()
 
+
 class Coin(pygame.sprite.Sprite):
     def __init__(self, x, y, width, height):
         super().__init__()
@@ -148,6 +156,7 @@ class Coin(pygame.sprite.Sprite):
         self.rect.x -= OBSTACLE_SPEED
         if self.rect.right < 0:
             self.kill()
+
 
 class Floor(pygame.sprite.Sprite):
     def __init__(self, x, y, width, height):
@@ -182,6 +191,21 @@ def show_score(window, score):
     font = pygame.font.SysFont("Comic Sans MS", 48)
     text = font.render(f'Score: {score}', True, WHITE)
     window.blit(text, (0, 0))
+
+
+volume_change_timestamp = pygame.time.get_ticks() - 1000
+
+
+def show_volume(window, volume):
+    font = pygame.font.SysFont("Comic Sans MS", 40)
+    text = font.render(f'Volume: {volume}%', True, WHITE)
+    duration = pygame.time.get_ticks() - volume_change_timestamp
+    fraction = (VOLUME_MESSAGE_DURATION - duration) / VOLUME_MESSAGE_DURATION
+    if fraction < 0:
+        fraction = 0
+    text.set_alpha(fraction * 256)
+    window.blit(text, (SCREEN_WIDTH - text.get_rect().width, 0))
+
 
 def show_coin_count(window, score):
     for i in range(score):
@@ -231,6 +255,15 @@ while running:
         if event.type == pygame.QUIT:
             running = False
             pygame.quit()
+        if event.type == pygame.MOUSEWHEEL:
+            volume_change_timestamp = pygame.time.get_ticks()
+            distance = event.y
+            volume += distance * VOLUME_TICK
+            if volume > MAX_VOLUME:
+                volume = MAX_VOLUME
+            if volume < MIN_VOLUME:
+                volume = MIN_VOLUME
+            pygame.mixer.music.set_volume(volume / 100)
 
     if pygame.time.get_ticks() - last_score_timestamp > 1000:
         last_score_timestamp = pygame.time.get_ticks()
@@ -261,6 +294,7 @@ while running:
         coin_counter += 1
 
     show_score(window, score)
+    show_volume(window, volume)
     show_coin_count(window, coin_counter)
 
     all_sprites.update(keys)
