@@ -37,6 +37,7 @@ GROUND_Y = SCREEN_HEIGHT - 20
 GRAVITY = 1
 JUMP_SPEED = -15
 OBSTACLE_SPEED = 5
+PLAYER_SPEED = 0
 SPAWN_DELAY = 1000
 MAX_OFFSET_SPAWN_DELAY = 500
 
@@ -103,6 +104,8 @@ class Player(pygame.sprite.Sprite):
 
         self.rect.y += self.velocity
         self.velocity += GRAVITY
+
+        self.rect.x += PLAYER_SPEED
 
         floor_collided_block = pygame.sprite.spritecollideany(self, floor_group)
         if floor_collided_block is not None:
@@ -181,7 +184,7 @@ def draw_debug_grid(window):
 def show_game_over(window):
     pygame.mixer.music.fadeout(1000)
     font = pygame.font.SysFont(None, 72)
-    text = font.render("Game over", True, WHITE)
+    text = font.render("Victory" if victory else "Game over", True, WHITE)
     window.blit(text, (SCREEN_WIDTH // 2 - 150, SCREEN_HEIGHT // 2 - 40))
     pygame.display.update()
     pygame.time.delay(3000)
@@ -242,6 +245,7 @@ for i, row in enumerate(map_content):
             coin_group.add(coin)
             all_sprites.add(coin)
 
+victory = False
 score = 0
 coin_counter = 0
 last_score_timestamp = pygame.time.get_ticks()
@@ -284,6 +288,10 @@ while running:
         elif player.rect.top <= block.rect.bottom:
             running = False
 
+    if player.rect.right >= SCREEN_WIDTH:
+        running = False
+        victory = True
+
     collided_obr = pygame.sprite.spritecollideany(player, orb_group)
     if collided_obr is not None:
         player.extra_jump = True
@@ -300,6 +308,9 @@ while running:
     all_sprites.update(keys)
     pygame.display.update()
     background_offset += OBSTACLE_SPEED
+    if background_offset > background_surface.get_width() - SCREEN_WIDTH and OBSTACLE_SPEED > 0:
+        PLAYER_SPEED = OBSTACLE_SPEED
+        OBSTACLE_SPEED = 0
 
 show_game_over(window)
 pygame.quit()
