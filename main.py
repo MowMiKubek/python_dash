@@ -1,10 +1,71 @@
+import os
 import pygame
 import csv
 
 pygame.init()
 
+maps_filename_list = []
+
+for obj in os.listdir('data/maps'):
+    fullname = os.path.join('data/maps/', obj)
+    if os.path.isdir(fullname) and len(os.listdir(fullname)) > 0:
+        maps_filename_list.append(obj)
+
+tileset_image = pygame.image.load('data/images/bg.png')
+WIDTH, HEIGHT = tileset_image.get_size()
+window = pygame.display.set_mode((WIDTH, HEIGHT))
+
+font_header = pygame.font.SysFont('Comic Sans MS', 56)
+font_item = pygame.font.SysFont('Comic Sams MS', 48)
+
+menu_text = font_header.render("Select Map", True, (255, 255, 255))
+menu_rect = menu_text.get_rect()
+menu_rect.center = (WIDTH / 2, HEIGHT / 4)
+
+selected_idx = 0
+offset = 0
+selecting = True
+while selecting:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_RETURN:
+                selecting = False
+            if event.key == pygame.K_UP:
+                if selected_idx == 0:
+                    continue
+                selected_idx -= 1
+                print(selected_idx + 1)
+                if selected_idx - offset < 0:
+                    offset -= 1
+            if event.key == pygame.K_DOWN:
+                if selected_idx == len(maps_filename_list) - 1:
+                    selected_idx = 0
+                    offset = 0
+                    continue
+                selected_idx += 1
+                print(selected_idx + 1)
+                if selected_idx - offset >= 3:
+                    offset += 1
+
+    window.blit(tileset_image, (0, 0))
+    window.blit(menu_text, menu_rect)
+
+    for i, filename in enumerate(maps_filename_list[offset:offset+3]):
+        selection_mark = "*" if i == selected_idx - offset else ""
+        item_text = font_header.render(f'{selection_mark}{i+offset+1}. {filename}', True, (255, 255, 255))
+        item_rect = item_text.get_rect()
+        item_rect.center = (WIDTH / 2, HEIGHT / 2 + i*80)
+        window.blit(item_text, item_rect)
+
+    pygame.display.update()
+
+
+map_folder_name = maps_filename_list[selected_idx]
+
 map_content = []
-with open('data/map_objects.csv', 'r') as file:
+with open(f'data/maps/{map_folder_name}/map_objects.csv', 'r') as file:
     file_content = file.readlines()
     for line in file_content:
         map_content.append(line.split(','))
@@ -62,7 +123,7 @@ for row in range(tileset_rows):
         tile = tileset_image.subsurface((col * BLOCK_SIZE, row * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE))
         tiles.append(tile)
 
-with open("data/map_background.csv", "r") as file:
+with open(f'data/maps/{map_folder_name}/map_background.csv', "r") as file:
     reader = csv.reader(file)
     tilemap = [list(map(int, row)) for row in reader]
 

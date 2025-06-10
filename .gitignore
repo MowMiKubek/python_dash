@@ -1,1 +1,7 @@
 data/tiled
+data/maps/*
+
+.venv
+
+!data/maps/easy
+!data/maps/medium
