@@ -52,15 +52,14 @@ while selecting:
     window.blit(tileset_image, (0, 0))
     window.blit(menu_text, menu_rect)
 
-    for i, filename in enumerate(maps_filename_list[offset:offset+3]):
+    for i, filename in enumerate(maps_filename_list[offset:offset + 3]):
         selection_mark = "*" if i == selected_idx - offset else ""
-        item_text = font_header.render(f'{selection_mark}{i+offset+1}. {filename}', True, (255, 255, 255))
+        item_text = font_header.render(f'{selection_mark}{i + offset + 1}. {filename}', True, (255, 255, 255))
         item_rect = item_text.get_rect()
-        item_rect.center = (WIDTH / 2, HEIGHT / 2 + i*80)
+        item_rect.center = (WIDTH / 2, HEIGHT / 2 + i * 80)
         window.blit(item_text, item_rect)
 
     pygame.display.update()
-
 
 map_folder_name = maps_filename_list[selected_idx]
 
@@ -97,7 +96,7 @@ WIDTH = 2 * HEIGHT
 GROUND_Y = SCREEN_HEIGHT - 20
 GRAVITY = 1
 JUMP_SPEED = -15
-OBSTACLE_SPEED = 5
+BASE_HORIZONTAL_SPEED = 5
 PLAYER_SPEED = 0
 SPAWN_DELAY = 1000
 MAX_OFFSET_SPAWN_DELAY = 500
@@ -147,6 +146,7 @@ pygame.mixer.music.load("data/music/music1.mp3")
 pygame.mixer.music.play(-1)
 pygame.mixer.music.set_volume(volume / 100)
 
+obstacle_speed = BASE_HORIZONTAL_SPEED
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, x, y, size):
@@ -156,6 +156,7 @@ class Player(pygame.sprite.Sprite):
         self.rect.topleft = (x, y)
 
         self.velocity = 0
+        self.horizontal_speed = 0
         self.on_ground = True
         self.extra_jump = False
 
@@ -166,7 +167,7 @@ class Player(pygame.sprite.Sprite):
         self.rect.y += self.velocity
         self.velocity += GRAVITY
 
-        self.rect.x += PLAYER_SPEED
+        self.rect.x += self.horizontal_speed
 
         floor_collided_block = pygame.sprite.spritecollideany(self, floor_group)
         if floor_collided_block is not None:
@@ -191,7 +192,7 @@ class Obstacle(pygame.sprite.Sprite):
         self.rect.topleft = (x, y)
 
     def update(self, keys):
-        self.rect.x -= OBSTACLE_SPEED
+        self.rect.x -= obstacle_speed
         if self.rect.right < 0:
             self.kill()
 
@@ -204,7 +205,7 @@ class Orb(pygame.sprite.Sprite):
         self.rect.topleft = (x, y)
 
     def update(self, keys):
-        self.rect.x -= OBSTACLE_SPEED
+        self.rect.x -= obstacle_speed
         if self.rect.right < 0:
             self.kill()
 
@@ -217,7 +218,7 @@ class Coin(pygame.sprite.Sprite):
         self.rect.topleft = (x, y)
 
     def update(self, keys):
-        self.rect.x -= OBSTACLE_SPEED
+        self.rect.x -= obstacle_speed
         if self.rect.right < 0:
             self.kill()
 
@@ -230,7 +231,7 @@ class Floor(pygame.sprite.Sprite):
         self.rect.topleft = (x, y)
 
     def update(self, keys):
-        self.rect.x -= OBSTACLE_SPEED
+        self.rect.x -= obstacle_speed
         if self.rect.right < 0:
             self.kill()
 
@@ -278,8 +279,15 @@ def show_coin_count(window, score):
 
 running = True
 
+map_content_first_col = [row[0] for row in map_content]
+try:
+    start_idx = map_content_first_col.index('0')
+    start_idx = start_idx - 1
+except ValueError:
+    start_idx = 0
+
 all_sprites = pygame.sprite.Group()
-player = Player(3 * BLOCK_SIZE, SCREEN_HEIGHT - 5 * BLOCK_SIZE, BLOCK_SIZE)
+player = Player(0, start_idx * BLOCK_SIZE, BLOCK_SIZE)
 obstacles = pygame.sprite.Group()
 floor_group = pygame.sprite.Group()
 orb_group = pygame.sprite.Group()
@@ -311,6 +319,8 @@ score = 0
 coin_counter = 0
 last_score_timestamp = pygame.time.get_ticks()
 
+game_phase = 0
+print(background_surface.get_width() - SCREEN_WIDTH)
 background_offset = 0
 while running:
     clock.tick(FPS)
@@ -368,10 +378,24 @@ while running:
 
     all_sprites.update(keys)
     pygame.display.update()
-    background_offset += OBSTACLE_SPEED
-    if background_offset > background_surface.get_width() - SCREEN_WIDTH and OBSTACLE_SPEED > 0:
-        PLAYER_SPEED = OBSTACLE_SPEED
-        OBSTACLE_SPEED = 0
+
+    if game_phase == 0:
+        obstacle_speed = 0
+        player.horizontal_speed = BASE_HORIZONTAL_SPEED
+        if player.rect.left >= 3 * BLOCK_SIZE:
+            player.rect.left = 3 * BLOCK_SIZE
+            game_phase = 1
+    if game_phase == 1:
+        obstacle_speed = BASE_HORIZONTAL_SPEED
+        player.horizontal_speed = 0
+        print(background_offset, background_surface.get_width() - SCREEN_WIDTH, game_phase)
+        if background_offset > background_surface.get_width() - SCREEN_WIDTH:
+            game_phase = 2
+    if game_phase == 2:
+        obstacle_speed = 0
+        player.horizontal_speed = BASE_HORIZONTAL_SPEED
+
+    background_offset += obstacle_speed
 
 show_game_over(window)
 pygame.quit()
