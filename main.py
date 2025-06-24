@@ -36,7 +36,6 @@ while selecting:
                 if selected_idx == 0:
                     continue
                 selected_idx -= 1
-                print(selected_idx + 1)
                 if selected_idx - offset < 0:
                     offset -= 1
             if event.key == pygame.K_DOWN:
@@ -45,7 +44,6 @@ while selecting:
                     offset = 0
                     continue
                 selected_idx += 1
-                print(selected_idx + 1)
                 if selected_idx - offset >= 3:
                     offset += 1
 
@@ -159,29 +157,36 @@ class Player(pygame.sprite.Sprite):
         self.horizontal_speed = 0
         self.on_ground = True
         self.extra_jump = False
+        self.JUMP_MODE = 0
 
     def update(self, keys):
         if keys[pygame.K_SPACE]:
             self.jump()
 
         self.rect.y += self.velocity
-        self.velocity += GRAVITY
+
+        if self.JUMP_MODE == 1 and self.velocity < 10 or self.JUMP_MODE == 0:
+            self.velocity += GRAVITY
 
         self.rect.x += self.horizontal_speed
 
-        floor_collided_block = pygame.sprite.spritecollideany(self, floor_group)
-        if floor_collided_block is not None:
-            if self.velocity > 0:
-                self.velocity = 0
-                self.on_ground = True
-                self.rect.bottom = floor_collided_block.rect.top
-        else:
-            self.on_ground = False
+        if self.JUMP_MODE == 0:
+            floor_collided_block = pygame.sprite.spritecollideany(self, floor_group)
+            if floor_collided_block is not None:
+                if self.velocity > 0:
+                    self.velocity = 0
+                    self.on_ground = True
+                    self.rect.bottom = floor_collided_block.rect.top
+            else:
+                self.on_ground = False
 
     def jump(self):
-        if self.on_ground or self.extra_jump:
-            self.velocity = JUMP_SPEED
-            self.on_ground = False
+        if self.JUMP_MODE == 0:
+            if self.on_ground or self.extra_jump:
+                self.velocity = JUMP_SPEED
+                self.on_ground = False
+        elif self.JUMP_MODE == 1:
+            self.velocity -= 1
 
 
 class Obstacle(pygame.sprite.Sprite):
@@ -278,11 +283,12 @@ def show_coin_count(window, score):
 
 
 running = True
+GAME_MODE = 0
 
 map_content_first_col = [row[0] for row in map_content]
 try:
     start_idx = map_content_first_col.index('0')
-    start_idx = start_idx - 1
+    start_idx = start_idx - 1 - 5 * GAME_MODE
 except ValueError:
     start_idx = 0
 
@@ -292,6 +298,10 @@ obstacles = pygame.sprite.Group()
 floor_group = pygame.sprite.Group()
 orb_group = pygame.sprite.Group()
 coin_group = pygame.sprite.Group()
+
+if GAME_MODE == 1:
+    GRAVITY = 0.5
+    player.JUMP_MODE = GAME_MODE
 
 all_sprites.add(player)
 
@@ -320,9 +330,9 @@ coin_counter = 0
 last_score_timestamp = pygame.time.get_ticks()
 
 game_phase = 0
-print(background_surface.get_width() - SCREEN_WIDTH)
 background_offset = 0
 while running:
+    print(player.rect.x, player.rect.y)
     clock.tick(FPS)
     keys = pygame.key.get_pressed()
 
@@ -352,6 +362,8 @@ while running:
         running = False
 
     floor_hits = pygame.sprite.spritecollide(player, floor_group, False)
+    if GAME_MODE == 1 and len(floor_hits) > 0:
+        running = False
     for block in floor_hits:
         # collision from left
         if player.rect.right >= block.rect.left:
@@ -388,7 +400,6 @@ while running:
     if game_phase == 1:
         obstacle_speed = BASE_HORIZONTAL_SPEED
         player.horizontal_speed = 0
-        print(background_offset, background_surface.get_width() - SCREEN_WIDTH, game_phase)
         if background_offset > background_surface.get_width() - SCREEN_WIDTH:
             game_phase = 2
     if game_phase == 2:
